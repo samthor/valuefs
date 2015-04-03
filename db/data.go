@@ -34,7 +34,7 @@ const (
 
 // View is a request for a view over a Record.
 type View struct {
-	Type Type
+	Type     Type
 	Duration time.Duration
 }
 
