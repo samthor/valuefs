@@ -147,4 +147,3 @@ func (s *Store) Clear(rec *Record) bool {
 	s.run(req)
 	return true
 }
-

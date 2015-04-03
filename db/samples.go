@@ -21,7 +21,7 @@ func (sl sampleList) Last() *Sample {
 func (sl sampleList) Slice(from time.Time) (out sampleList, prev *Sample) {
 	var start int
 	end := len(sl)
-	for start = end-1; start >= 0; start-- {
+	for start = end - 1; start >= 0; start-- {
 		if from.After(sl[start].When) {
 			break // found enough
 		}
@@ -29,7 +29,7 @@ func (sl sampleList) Slice(from time.Time) (out sampleList, prev *Sample) {
 	if start >= 0 {
 		prev = sl[start]
 	}
-	return sl[start+1:end], prev
+	return sl[start+1 : end], prev
 }
 
 // Total sums the values in this sampleList.
