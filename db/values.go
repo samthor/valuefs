@@ -1,9 +1,5 @@
 package db
 
-import (
-	"time"
-)
-
 // Store is the top-level database store for ValueFS. It implements StoreAPI.
 type Store struct {
 	values   map[string]*storeValue
@@ -61,7 +57,7 @@ func (s *Store) Run() {
 				if sv == nil {
 					break
 				}
-				r.Sample = sv.get(s.sequence.Next(), x.Type, x.Duration)
+				r.Sample = sv.get(s.sequence.Next(), x.View)
 			case reqClear:
 				// unconditionally delete
 				// TODO: maybe log this for later log updates
@@ -105,18 +101,13 @@ func (s *Store) Load(name string, create bool) *Record {
 	return &rec
 }
 
-// GetLatest retrieves the latest Sample for this Record, or nil if none.
-func (s *Store) GetLatest(rec *Record) *Sample {
-	return s.Get(rec, Latest, time.Duration(0))
-}
-
 // Get retrieves a Sample for this Record of the given type.
-func (s *Store) Get(rec *Record, t Type, d time.Duration) *Sample {
-	if !rec.Valid() || d < time.Duration(0) {
+func (s *Store) Get(rec *Record, view *View) *Sample {
+	if !rec.Valid() || !view.Valid() {
 		return nil
 	}
 
-	req := request{requestID: reqGet, name: rec.Name, Type: t, Duration: d}
+	req := request{requestID: reqGet, name: rec.Name, View: view}
 	resp := s.run(req)
 
 	// FIXME: clearer clone

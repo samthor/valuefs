@@ -2,6 +2,7 @@ package main
 
 import (
 	"regexp"
+	"time"
 
 	"github.com/samthor/valuefs/db"
 )
@@ -13,41 +14,48 @@ var (
 
 // matchPath matches the given path against the ValueFS regex. Ensures that the
 // path has the required length.
-func matchPath(path string) (base, mode, ext string, ok bool) {
+func matchPath(path string) (base string, view *db.View, ok bool) {
 	m := pathRe.FindStringSubmatch(path)
 	if m == nil {
 		return // default values are fine
 	}
-	return m[1], m[3], m[4], true
-}
 
-// matchLatestPath matches only the latest-form of a path. Ensures that it has
-// the required length.
-func matchLatestPath(path string) (base string, ok bool) {
-	var mode, ext string
-	base, mode, ext, ok = matchPath(path)
-	if mode != "" || ext != "" {
-		return "", false
+	base = m[1]
+	mode, ext := m[3], m[4]
+	var t db.Type
+
+	if mode == "" {
+		return base, nil, true
 	}
-	return
-}
-
-// matchMode matches the mode string to a db.Type.
-func matchMode(mode string) (t db.Type, ok bool) {
-	ok = true
 
 	switch mode {
-	case "":
-		t = db.Latest
+	default:
+		return
 	case "#":
 		t = db.Average
 	case "%":
 		t = db.Total
 	case "@":
 		t = db.ValueAt
-	default:
-		ok = false
 	}
 
+	d, err := time.ParseDuration(ext)
+	if err != nil {
+		return
+	}
+
+	view = &db.View{Type: t, Duration: d}
+	return base, view, true
+}
+
+// matchLatestPath matches only the latest-form of a path. Ensures that it has
+// the required length.
+func matchLatestPath(path string) (base string, ok bool) {
+	var view *db.View
+	base, view, ok = matchPath(path)
+	if view != nil {
+		return base, false
+	}
 	return
 }
+

@@ -1,7 +1,6 @@
 package db
 
 import (
-	"fmt"
 	"strconv"
 	"time"
 )
@@ -11,17 +10,16 @@ type StoreAPI interface {
 	List() RecordList
 	Load(string, bool) *Record
 	Write(*Record, int64) bool
-	GetLatest(*Record) *Sample
-	Get(*Record, Type, time.Duration) *Sample
-	Clear(*Record)
+	Get(*Record, *View) *Sample
+	Clear(*Record) bool
 }
 
 // Type describes an approach to Get.
 type Type int
 
 const (
-	// Latest is the default, fetching the most recent value.
-	Latest Type = iota
+	// None will be ignored.
+	None Type = iota
 
 	// Average finds the average over a duration.
 	Average
@@ -33,6 +31,17 @@ const (
 	// most recently before the resolved time.
 	ValueAt
 )
+
+// View is a request for a view over a Record.
+type View struct {
+	Type Type
+	Duration time.Duration
+}
+
+// Valid determines whether this View is valid. The nil View is valid.
+func (v *View) Valid() bool {
+	return v == nil || (v.Type != None && v.Duration >= time.Duration(0))
+}
 
 // Record is a header/file combination.
 type Record struct {
@@ -62,14 +71,6 @@ type RecordList []*Record
 type Sample struct {
 	Value int64
 	When  time.Time
-}
-
-// String converts this Sample to its output.
-func (s *Sample) String() string {
-	if s == nil {
-		return ""
-	}
-	return fmt.Sprintf("%d\n", s.Value)
 }
 
 // Bytes converts this Sample to a byte array.
