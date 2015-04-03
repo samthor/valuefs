@@ -58,4 +58,3 @@ func matchLatestPath(path string) (base string, ok bool) {
 	}
 	return
 }
-

@@ -199,4 +199,3 @@ func (vf *ValueFileView) Attr() fuse.Attr {
 func (vf *ValueFileView) ReadAll(ctx context.Context) ([]byte, error) {
 	return vf.Bytes, nil
 }
-
