@@ -22,3 +22,11 @@ func (ts *TimeSequence) Next() time.Time {
 	ts.last = out
 	return out
 }
+
+// Grow increases the internal time.Time to at least the passed value.
+func (ts *TimeSequence) Grow(t time.Time) {
+	if t.After(ts.last) {
+		// add one just to be safe
+		ts.last = t.Add(time.Duration(1))
+	}
+}
