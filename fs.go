@@ -16,7 +16,7 @@ import (
 
 // ValueFS implements the file system and its root directory.
 type ValueFS struct {
-	Store *db.Store
+	Store db.API
 }
 
 func (vfs *ValueFS) Root() (fs.Node, error) {

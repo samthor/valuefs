@@ -29,10 +29,7 @@ func main() {
 	}
 	defer c.Close()
 
-	v := &ValueFS{
-		Store: &db.Store{},
-	}
-	v.Store.Run()
+	v := &ValueFS{db.New()}
 
 	if err = fs.Serve(c, v); err != nil {
 		log.Fatal(err)

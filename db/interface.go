@@ -5,16 +5,16 @@ import (
 	"time"
 )
 
-// StoreAPI is a database interface.
-type StoreAPI interface {
+// API is a database interface.
+type API interface {
 	List() RecordList
 	Load(string, bool) *Record
-	Write(*Record, int64) bool
+	Write(*Record, float64) bool
 	Get(*Record, *View) *Sample
 	Clear(*Record) bool
 }
 
-// Type describes an approach to Get.
+// Type describes an approach to a View.
 type Type int
 
 const (
