@@ -40,7 +40,7 @@ func (sv *storeValue) get(when time.Time, v *View) *Sample {
 		}
 		s.Value = view.Total()
 		if t == Average {
-			s.Value /= int64(len(view))
+			s.Value /= float64(len(view))
 		}
 		return s
 	}
@@ -66,7 +66,7 @@ type request struct {
 	ret  chan response
 
 	b bool
-	v int64
+	v float64
 
 	*View
 }

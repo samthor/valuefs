@@ -33,7 +33,7 @@ func (sl sampleList) Slice(from time.Time) (out sampleList, prev *Sample) {
 }
 
 // Total sums the values in this sampleList.
-func (sl sampleList) Total() (out int64) {
+func (sl sampleList) Total() (out float64) {
 	for _, x := range sl {
 		out += x.Value
 	}

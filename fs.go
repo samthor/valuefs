@@ -145,7 +145,7 @@ func (vf *ValueFileLatest) Write(ctx context.Context, req *fuse.WriteRequest, re
 	}
 
 	s := strings.TrimSpace(string(req.Data))
-	parsed, err := strconv.ParseInt(s, 0, 64)
+	parsed, err := strconv.ParseFloat(s, 64)
 	if err != nil {
 		return fuse.EIO
 	}

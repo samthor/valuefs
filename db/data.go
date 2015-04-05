@@ -69,7 +69,7 @@ type RecordList []*Record
 // independent and immutable. In cases where Sample represents a historic
 // value, When will typically represent the time it was generated.
 type Sample struct {
-	Value int64
+	Value float64
 	When  time.Time
 }
 
@@ -79,6 +79,6 @@ func (s *Sample) Bytes() []byte {
 		return nil
 	}
 	out := make([]byte, 0, 16)
-	out = strconv.AppendInt(out, s.Value, 10)
+	out = strconv.AppendFloat(out, s.Value, 'f', -1, 64)
 	return append(out, '\n')
 }

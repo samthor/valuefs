@@ -119,7 +119,7 @@ func (s *Store) Get(rec *Record, view *View) *Sample {
 }
 
 // Write unconditionally sets a new value for the specified Record.
-func (s *Store) Write(rec *Record, value int64) bool {
+func (s *Store) Write(rec *Record, value float64) bool {
 	if !rec.Valid() {
 		return false
 	}
