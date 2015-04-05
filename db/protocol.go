@@ -11,8 +11,8 @@ type storeValue struct {
 	History sampleList
 }
 
-// get retrieves the value according to the passed Type. If it is Latest, this
-// is simple; otherwise, generate typically based on historic data.
+// get retrieves the value for the given View. If the View is nil, then this is
+// simple; otherwise generate based on historic data.
 func (sv *storeValue) get(when time.Time, v *View) *Sample {
 	if len(sv.History) == 0 {
 		return nil // nothing to do here!
@@ -45,7 +45,7 @@ func (sv *storeValue) get(when time.Time, v *View) *Sample {
 		return s
 	}
 
-	log.Printf("interal get got unknown type: %v", t)
+	log.Printf("internal get got unknown type: %v", t)
 	return nil
 }
 
