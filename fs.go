@@ -73,7 +73,8 @@ func (vfs *ValueFS) Remove(ctx context.Context, req *fuse.RemoveRequest) error {
 	rec := vfs.Store.Load(name, false)
 	if rec != nil {
 		vfs.Store.Clear(rec)
-		req.Respond()
+		// Note that replying to the RemoveRequest seems to occasionally NPE. It's
+		// not obviously required.
 	}
 	return nil
 }
