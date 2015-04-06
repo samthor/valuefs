@@ -34,6 +34,15 @@ func (sv *storeValue) get(when time.Time, v *View) *Sample {
 		return s
 	}
 
+	if t == SafeLatest {
+		// TODO: could be faster, just look at last in sv.History
+		if len(view) == 0 {
+			return nil
+		}
+		s.Value = view[len(view)-1].Value
+		return s
+	}
+
 	if t == Average || t == Total {
 		if len(view) == 0 {
 			return nil

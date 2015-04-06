@@ -37,6 +37,8 @@ func matchPath(path string) (base string, view *db.View, ok bool) {
 		t = db.Total
 	case "@":
 		t = db.ValueAt
+	case "^":
+		t = db.SafeLatest
 	}
 
 	d, err := time.ParseDuration(ext)

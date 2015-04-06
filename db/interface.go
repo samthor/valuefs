@@ -30,6 +30,10 @@ const (
 	// ValueAt finds the value at given duration in the past, aka the value set
 	// most recently before the resolved time.
 	ValueAt
+
+	// SafeLatest finds the last set value, assuming that it was set after the
+	// specified duration in the past. Prevents dead values.
+	SafeLatest
 )
 
 // View is a request for a view over a Record.
