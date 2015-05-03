@@ -67,6 +67,7 @@ const (
 	reqWrite
 	reqGet
 	reqClear
+	reqPrune
 )
 
 type request struct {

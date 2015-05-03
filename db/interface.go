@@ -12,6 +12,13 @@ type API interface {
 	Write(*Record, float64) bool
 	Get(*Record, *View) *Sample
 	Clear(*Record) bool
+	Prune() bool
+}
+
+// Config is the configuration for API.
+type Config struct {
+	MemoryValues int
+	PruneWhen    time.Duration
 }
 
 // Type describes an approach to a View.

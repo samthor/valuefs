@@ -1,11 +1,16 @@
 package db
 
+import (
+	"log"
+)
+
 // New returns a new instance implementing the API for this package. It should
 // be used by a filesystem or other user-facing interface.
-func New() API {
+func New(c *Config) API {
 	s := &store{
 		values:  make(map[string]*storeValue),
 		control: make(chan request),
+		config:  *c,
 	}
 	go s.runner()
 	return s
@@ -16,11 +21,18 @@ type store struct {
 	values   map[string]*storeValue
 	control  chan request
 	sequence TimeSequence
+	count    int
+	config   Config
 }
 
 func (s *store) runner() {
 	for x := range s.control {
 		r := response{Time: s.sequence.Next()}
+		var sv *storeValue
+
+		if x.name != "" {
+			sv = s.values[x.name]
+		}
 
 		switch x.requestID {
 		case reqNone:
@@ -32,7 +44,6 @@ func (s *store) runner() {
 				r.RecordList = append(r.RecordList, &v.Record)
 			}
 		case reqLoad:
-			sv := s.values[x.name]
 			if sv == nil && x.b {
 				// create if it doesn't exist
 				sv = &storeValue{
@@ -48,17 +59,16 @@ func (s *store) runner() {
 				r.Record = &sv.Record
 			}
 		case reqWrite:
-			sv := s.values[x.name]
 			if sv == nil {
 				break
 			}
-			s := &Sample{
+			sample := &Sample{
 				Value: x.v,
 				When:  s.sequence.Next(),
 			}
-			sv.History = append(sv.History, s)
+			s.count++
+			sv.History = append(sv.History, sample)
 		case reqGet:
-			sv := s.values[x.name]
 			if sv == nil {
 				break
 			}
@@ -66,7 +76,10 @@ func (s *store) runner() {
 		case reqClear:
 			// unconditionally delete
 			// TODO: maybe log this for later log updates
+			s.count -= len(sv.History)
 			delete(s.values, x.name)
+		case reqPrune:
+			log.Printf("prune; got %v values (of %v)", s.count, s.config.MemoryValues)
 		default:
 			panic("unhandled request")
 		}
@@ -139,6 +152,13 @@ func (s *store) Clear(rec *Record) bool {
 		return false
 	}
 	req := request{requestID: reqClear, name: rec.Name}
+	s.run(req)
+	return true
+}
+
+// Prune prunes values from this Store.
+func (s *store) Prune() bool {
+	req := request{requestID: reqPrune}
 	s.run(req)
 	return true
 }
