@@ -4,6 +4,12 @@ import (
 	"time"
 )
 
+// row contains a Sample and a corresponding Record.
+type row struct {
+	s Sample
+	sv *storeValue
+}
+
 // sampleList is a list of Samples used in internal storage. Assumed to be
 // in ascending order (earliest times first).
 type sampleList []*Sample

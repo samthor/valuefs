@@ -1,6 +1,7 @@
 package db
 
 import (
+	"time"
 	"log"
 )
 
@@ -13,15 +14,16 @@ func New(c *Config) API {
 		config:  *c,
 	}
 	go s.runner()
+
 	return s
 }
 
 // store is the top-level database store for ValueFS. It implements API.
 type store struct {
 	values   map[string]*storeValue
+	rows     []*row
 	control  chan request
 	sequence TimeSequence
-	count    int
 	config   Config
 }
 
@@ -62,12 +64,31 @@ func (s *store) runner() {
 			if sv == nil {
 				break
 			}
-			sample := &Sample{
-				Value: x.v,
-				When:  s.sequence.Next(),
+
+			r := &row{
+				s: Sample{
+					Value: x.v,
+					When:  s.sequence.Next(),
+				},
+				sv: sv,
 			}
-			s.count++
-			sv.History = append(sv.History, sample)
+			s.rows = append(s.rows, r)
+
+			// If we have too many values, prune the last other one.
+			if len(s.rows) > s.config.MemoryValues {
+				// TODO: use circ buffer?
+				clear := s.rows[0]
+				s.rows = s.rows[1:]
+				log.Printf("got to prune: %v", clear)
+
+				check := clear.sv.History[0]
+				if check != &clear.s {
+					log.Fatal("rec didn't match: %+v", clear.sv)
+				}
+				clear.sv.History = clear.sv.History[1:]
+			}
+
+			sv.History = append(sv.History, &r.s)
 		case reqGet:
 			if sv == nil {
 				break
@@ -76,16 +97,44 @@ func (s *store) runner() {
 		case reqClear:
 			// unconditionally delete
 			// TODO: maybe log this for later log updates
-			s.count -= len(sv.History)
 			delete(s.values, x.name)
-		case reqPrune:
-			log.Printf("prune; got %v values (of %v)", s.count, s.config.MemoryValues)
 		default:
 			panic("unhandled request")
 		}
 
 		x.ret <- r
 	}
+}
+
+type requestID int
+
+const (
+	reqNone requestID = iota
+	reqList
+	reqLoad
+	reqWrite
+	reqGet
+	reqClear
+)
+
+type request struct {
+	requestID
+	name string
+	ret  chan response
+
+	b bool
+	v float64
+
+	*View
+}
+
+// response is returned from the Store runner, an aggregate of all possible
+// return values.
+type response struct {
+	time.Time
+	RecordList
+	*Record
+	*Sample
 }
 
 func (s *store) run(r request) response {
@@ -156,9 +205,3 @@ func (s *store) Clear(rec *Record) bool {
 	return true
 }
 
-// Prune prunes values from this Store.
-func (s *store) Prune() bool {
-	req := request{requestID: reqPrune}
-	s.run(req)
-	return true
-}

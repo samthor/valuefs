@@ -58,34 +58,3 @@ func (sv *storeValue) get(when time.Time, v *View) *Sample {
 	return nil
 }
 
-type requestID int
-
-const (
-	reqNone requestID = iota
-	reqList
-	reqLoad
-	reqWrite
-	reqGet
-	reqClear
-	reqPrune
-)
-
-type request struct {
-	requestID
-	name string
-	ret  chan response
-
-	b bool
-	v float64
-
-	*View
-}
-
-// response is returned from the Store runner, an aggregate of all possible
-// return values.
-type response struct {
-	time.Time
-	RecordList
-	*Record
-	*Sample
-}
