@@ -57,4 +57,3 @@ func (sv *storeValue) get(when time.Time, v *View) *Sample {
 	log.Printf("internal get got unknown type: %v", t)
 	return nil
 }
-

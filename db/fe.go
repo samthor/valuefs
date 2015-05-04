@@ -1,8 +1,8 @@
 package db
 
 import (
-	"time"
 	"log"
+	"time"
 )
 
 // New returns a new instance implementing the API for this package. It should
@@ -25,6 +25,40 @@ type store struct {
 	control  chan request
 	sequence TimeSequence
 	config   Config
+}
+
+// prune removes values.
+func (s *store) prune() {
+	clear := make(map[*storeValue]struct {
+		rows []*row
+	})
+
+	var retain []*row // last-most values
+
+	var i int
+	for i = 0; len(s.rows)-i > s.config.MemoryValues; i++ {
+		cand := s.rows[i]
+
+		values := len(cand.sv.History)
+		if values <= 1 {
+			retain = append(retain, cand)
+			// TODO: panic if == 0?
+			continue
+		}
+
+		c := clear[cand.sv]
+		c.rows = append(c.rows, cand)
+		clear[cand.sv] = c
+	}
+
+	log.Printf("pruned rows from %d => %d (%d last)", len(s.rows), len(s.rows)-i+len(retain), len(retain))
+	s.rows = append(retain, s.rows[i:]...)
+
+	for sv, c := range clear {
+		count := len(c.rows)
+		log.Printf("pruning `%s`: removing %d prefix", sv.Record.Name, count)
+		sv.History = sv.History[count:]
+	}
 }
 
 func (s *store) runner() {
@@ -73,21 +107,6 @@ func (s *store) runner() {
 				sv: sv,
 			}
 			s.rows = append(s.rows, r)
-
-			// If we have too many values, prune the last other one.
-			if len(s.rows) > s.config.MemoryValues {
-				// TODO: use circ buffer?
-				clear := s.rows[0]
-				s.rows = s.rows[1:]
-				log.Printf("got to prune: %v", clear)
-
-				check := clear.sv.History[0]
-				if check != &clear.s {
-					log.Fatal("rec didn't match: %+v", clear.sv)
-				}
-				clear.sv.History = clear.sv.History[1:]
-			}
-
 			sv.History = append(sv.History, &r.s)
 		case reqGet:
 			if sv == nil {
@@ -98,6 +117,8 @@ func (s *store) runner() {
 			// unconditionally delete
 			// TODO: maybe log this for later log updates
 			delete(s.values, x.name)
+		case reqPrune:
+			s.prune()
 		default:
 			panic("unhandled request")
 		}
@@ -115,6 +136,7 @@ const (
 	reqWrite
 	reqGet
 	reqClear
+	reqPrune
 )
 
 type request struct {
@@ -205,3 +227,8 @@ func (s *store) Clear(rec *Record) bool {
 	return true
 }
 
+func (s *store) Prune() bool {
+	req := request{requestID: reqPrune}
+	s.run(req)
+	return true
+}

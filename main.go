@@ -4,6 +4,8 @@ package main
 import (
 	"flag"
 	"log"
+	"os"
+	"os/signal"
 
 	"bazil.org/fuse"
 	"bazil.org/fuse/fs"
@@ -34,6 +36,7 @@ func main() {
 		MemoryValues: *memoryValues,
 	}
 	v := &ValueFS{db.New(config)}
+	go signalWait(v.Store)
 
 	if err = fs.Serve(c, v); err != nil {
 		log.Fatal(err)
@@ -43,5 +46,16 @@ func main() {
 	<-c.Ready
 	if err := c.MountError; err != nil {
 		log.Fatal(err)
+	}
+}
+
+// signalWait translates all Interrupt signals to a call to the Prune function
+// on Store.
+func signalWait(store db.API) {
+	ch := make(chan os.Signal)
+	signal.Notify(ch, os.Interrupt)
+	for s := range ch {
+		log.Printf("signal: %v", s)
+		store.Prune()
 	}
 }

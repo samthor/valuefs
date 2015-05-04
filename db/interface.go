@@ -12,6 +12,7 @@ type API interface {
 	Write(*Record, float64) bool
 	Get(*Record, *View) *Sample
 	Clear(*Record) bool
+	Prune() bool
 }
 
 // Config is the configuration for API.

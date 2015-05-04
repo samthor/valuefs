@@ -6,7 +6,7 @@ import (
 
 // row contains a Sample and a corresponding Record.
 type row struct {
-	s Sample
+	s  Sample
 	sv *storeValue
 }
 
