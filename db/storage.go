@@ -4,7 +4,8 @@ import (
 	"time"
 )
 
-// row contains a Sample and a corresponding Record.
+// row contains a Sample (and its pointer to the owning storeValue), along
+// with whether it has been written to storage.
 type row struct {
 	s  Sample
 	sv *storeValue

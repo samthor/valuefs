@@ -15,6 +15,12 @@ type API interface {
 	Prune() bool
 }
 
+// Storage is provided as a storage mechanism. Passing a nil store will treat
+// all writes as successful, aka transient.
+type Storage interface {
+	Store(*Record, *Sample) error
+}
+
 // Config is the configuration for API.
 type Config struct {
 	MemoryValues int

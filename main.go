@@ -3,7 +3,9 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"log"
+	"time"
 	"os"
 	"os/signal"
 
@@ -17,6 +19,7 @@ var (
 	mountPath    = flag.String("mount", "", "mountpoint of filesystem")
 	logPath      = flag.String("log", "", "logfile to use, if any")
 	memoryValues = flag.Int("values", 100, "number of values to hold in memory")
+	writeDelay   = flag.Duration("writeDelay", time.Minute, "delay to write values")
 )
 
 func main() {
@@ -35,8 +38,14 @@ func main() {
 	config := &db.Config{
 		MemoryValues: *memoryValues,
 	}
-	v := &ValueFS{db.New(config)}
+	writer := &LogWriter{}
+	v := &ValueFS{db.New(config, writer)}
 	go signalWait(v.Store)
+	go func() {
+		for range time.Tick(*writeDelay) {
+			v.Store.Prune()
+		}
+	}()
 
 	if err = fs.Serve(c, v); err != nil {
 		log.Fatal(err)
@@ -58,4 +67,12 @@ func signalWait(store db.API) {
 		log.Printf("signal: %v", s)
 		store.Prune()
 	}
+}
+
+type LogWriter struct{}
+
+func (lw *LogWriter) Store(rec *db.Record, sample *db.Sample) error {
+	// TODO: Just writes to stdout for now.
+	fmt.Printf("%v\t%v\t%v\n", rec.Name, sample.When.Format(time.RFC3339), sample.Value)
+	return nil
 }

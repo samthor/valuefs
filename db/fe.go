@@ -7,11 +7,18 @@ import (
 
 // New returns a new instance implementing the API for this package. It should
 // be used by a filesystem or other user-facing interface.
-func New(c *Config) API {
+func New(c *Config, storage Storage) API {
+	if c == nil {
+		c = &Config{
+			MemoryValues: 100,
+		}
+	}
+
 	s := &store{
 		values:  make(map[string]*storeValue),
 		control: make(chan request),
 		config:  *c,
+		storage: storage,
 	}
 	go s.runner()
 
@@ -20,11 +27,31 @@ func New(c *Config) API {
 
 // store is the top-level database store for ValueFS. It implements API.
 type store struct {
-	values   map[string]*storeValue
-	rows     []*row
-	control  chan request
-	sequence TimeSequence
-	config   Config
+	values    map[string]*storeValue
+	rows      []*row // sorted forwards
+	watermark int // not including this row
+	control   chan request
+	sequence  TimeSequence
+	config    Config
+	storage   Storage
+}
+
+// write sends unwritten values to storage.
+func (s *store) write() {
+	if s.storage == nil {
+		s.watermark = len(s.rows)
+		return
+	}
+
+	for i := s.watermark; i < len(s.rows); i++ {
+		row := s.rows[i]
+		err := s.storage.Store(&row.sv.Record, &row.s)
+		if err != nil {
+			log.Printf("can't write to storage: err=%v", err)
+			return
+		}
+		s.watermark = i+1
+	}
 }
 
 // prune removes values.
@@ -49,14 +76,23 @@ func (s *store) prune() {
 		c := clear[cand.sv]
 		c.rows = append(c.rows, cand)
 		clear[cand.sv] = c
+		s.watermark--
 	}
 
-	log.Printf("pruned rows from %d => %d (%d last)", len(s.rows), len(s.rows)-i+len(retain), len(retain))
+	if s.watermark < 0 {
+		log.Printf("warning: dropped %d unwritten values", -s.watermark)
+		s.watermark = 0
+	}
+
+	remain := len(s.rows)-i+len(retain)
+	if len(s.rows) != remain {
+		log.Printf("pruned rows from %d => %d (%d last)", len(s.rows), remain, len(retain))
+	}
 	s.rows = append(retain, s.rows[i:]...)
 
 	for sv, c := range clear {
 		count := len(c.rows)
-		log.Printf("pruning `%s`: removing %d prefix", sv.Record.Name, count)
+		log.Printf("pruning '%s': removing %d prefix", sv.Record.Name, count)
 		sv.History = sv.History[count:]
 	}
 }
@@ -118,6 +154,7 @@ func (s *store) runner() {
 			// TODO: maybe log this for later log updates
 			delete(s.values, x.name)
 		case reqPrune:
+			s.write()
 			s.prune()
 		default:
 			panic("unhandled request")
