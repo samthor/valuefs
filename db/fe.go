@@ -152,6 +152,8 @@ func (s *store) runner() {
 		case reqClear:
 			// unconditionally delete
 			// TODO: maybe log this for later log updates
+			// Note that this will keep the actual rows around, detached, until
+			// pruned. If a new value by this name is added, it'll be unrelated.
 			delete(s.values, x.name)
 		case reqPrune:
 			s.write()
