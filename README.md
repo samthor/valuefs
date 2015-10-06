@@ -8,10 +8,10 @@ To write values, simply echo numbers to arbitrary filenames within a mounted FS.
 For example-
 
 ```bash
-echo 1 > power_on
-echo 25.45 > house_temp
-echo -100 > pending_stuff
-echo 24.07 > house_temp
+$ echo 1 > power_on
+$ echo 25.50 > house_temp
+$ echo -100 > pending_stuff
+$ echo 24.07 > house_temp
 ```
 
 The most recent values can be read back, or files removed to clear them.
@@ -28,9 +28,12 @@ These are well-documented inside [the interface](db/interface.go).
 * `@` **ValueAt**
 * `^` **SafeLatest**
 
-For example, if a file `ac_temp` exists, you can request its average over the past 10 minutes by reading this file-
+For example, if a file `house_temp` exists, you can request its average over the past 10 minutes by reading this file-
 
-`$ cat ac_temp#10m`
+```bash
+$ cat house_temp#10m
+24.785
+```
 
 Similarly, you could request its total over the past ten minutes, or the value it was >10 minutes ago.
 In the case of functions over the data - e.g., average or total - if there are no values within the time period, the file will not exist.
