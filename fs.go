@@ -141,7 +141,7 @@ func (vf *ValueFileLatest) Attr() fuse.Attr {
 
 func (vf *ValueFileLatest) Write(ctx context.Context, req *fuse.WriteRequest, resp *fuse.WriteResponse) error {
 	// allow 'append' writes anywhere after bytes (and if not loaded yet, just allow)
-	if int(req.Offset) < len(vf.Bytes) {
+	if req.Offset != 0 && int(req.Offset) < len(vf.Bytes) {
 		return fuse.EIO
 	}
 
