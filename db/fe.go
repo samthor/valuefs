@@ -98,6 +98,18 @@ func (s *store) prune() {
 }
 
 func (s *store) runner() {
+	if s.storage != nil {
+		start := s.storage.Load()
+		for r, x := range start {
+			sl := make(sampleList, 1)
+			sl[0] = x
+			s.values[r.Name] = &storeValue{
+				Record:  r,
+				History: sl,
+			}
+		}
+	}
+
 	for x := range s.control {
 		r := response{Time: s.sequence.Next()}
 		var sv *storeValue

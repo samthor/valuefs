@@ -71,6 +71,10 @@ func signalWait(store db.API) {
 
 type LogWriter struct{}
 
+func (lw *LogWriter) Load() map[string]*db.Sample {
+	return make(map[string]*db.Sample)
+}
+
 func (lw *LogWriter) Store(rec *db.Record, sample *db.Sample) error {
 	// TODO: Just writes to stdout for now.
 	fmt.Printf("%v\t%v\t%v\n", rec.Name, sample.When.Format(time.RFC3339), sample.Value)

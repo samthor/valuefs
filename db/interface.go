@@ -18,7 +18,13 @@ type API interface {
 // Storage is provided as a storage mechanism. Passing a nil store will treat
 // all writes as successful, aka transient.
 type Storage interface {
+
+	// Store a sample for the passed Record. If the Sample is nil, this is
+	// deleted.
 	Store(*Record, *Sample) error
+
+	// Load initial/current state.
+	Load() map[Record]*Sample
 }
 
 // Config is the configuration for API.
